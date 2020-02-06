@@ -63,7 +63,7 @@ class App extends React.Component {
       initialInvoiceItems
     } = this.state;
 
-    if (itemName !== "" && parseInt(itemQty) > 0) {
+    if (itemName !== "" && parseInt(itemQty) > 0 && parseInt(itemAmount) > 0) {
       if (edit) {
         let tempInvoiceItem = initialInvoiceItems.map(item =>
           item.id === id
@@ -111,8 +111,7 @@ class App extends React.Component {
     } else {
       this.handleAlert({
         type: "danger",
-        text:
-          "Item name should not be empty or item quantity should be bigger than zero."
+        text: "Please check if you forgot to fill up any other entries."
       });
     }
   }
@@ -161,7 +160,7 @@ class App extends React.Component {
 
     setTimeout(() => {
       this.setState({ alert: { show: false } });
-    }, 3000);
+    }, 4000);
   }
 
   componentDidMount() {
