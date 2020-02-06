@@ -1,5 +1,5 @@
 import React from "react";
-import { MdSend } from "react-icons/md";
+import { MdAddBox } from "react-icons/md";
 
 const InvoiceForm = ({
   itemCode,
@@ -8,6 +8,7 @@ const InvoiceForm = ({
   itemQty,
   itemRate,
   itemAmount,
+  edit,
   handleChange,
   handleSubmit
 }) => {
@@ -41,6 +42,7 @@ const InvoiceForm = ({
               value={itemName}
               onChange={evt => handleChange(evt)}
               className="form-control"
+              onFocus={selectValue}
               autoFocus
             />
           </div>
@@ -97,7 +99,7 @@ const InvoiceForm = ({
         </div>
         <div className="col-lg-2" style={{ paddingTop: "31px" }}>
           <button type="submit" className="btn btn-primary btn-block">
-            Submit <MdSend />
+            {edit ? "Edit" : "Add"} <MdAddBox />
           </button>
         </div>
       </form>

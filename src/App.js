@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import "./App.css";
 import uuid from "uuid/v4";
 
@@ -6,36 +6,11 @@ import uuid from "uuid/v4";
 import Alert from "./components/Alert";
 import InvoiceForm from "./components/InvoiceForm";
 import InvoiceList from "./components/InvoiceList";
+import InvoiceSummary from "./components/InvoiceSummary";
 
-const initialInvoiceItems = [
-  {
-    id: uuid(),
-    itemCode: "2050",
-    itemName: "Tandoory Chicken",
-    itemUnit: "Pcs",
-    itemQty: 5,
-    itemRate: 110,
-    itemAmount: 550
-  },
-  {
-    id: uuid(),
-    itemCode: "2099",
-    itemName: "Chicken Lollipop",
-    itemUnit: "Pcs",
-    itemQty: 4,
-    itemRate: 50,
-    itemAmount: 200
-  },
-  {
-    id: uuid(),
-    itemCode: "3659",
-    itemName: "Chicken Lollipop TOKUODIF",
-    itemUnit: "Pcs",
-    itemQty: 4,
-    itemRate: 50,
-    itemAmount: 200
-  }
-];
+const initialInvoiceItems = localStorage.getItem("invoiceItems")
+  ? JSON.parse(localStorage.getItem("invoiceItems"))
+  : [];
 
 class App extends React.Component {
   constructor(props) {
@@ -47,11 +22,19 @@ class App extends React.Component {
       itemQty: "0",
       itemRate: "0.00",
       itemAmount: "0.00",
-      initialInvoiceItems: initialInvoiceItems
+      initialInvoiceItems: initialInvoiceItems,
+      edit: false,
+      alert: {
+        show: false,
+        type: "",
+        text: ""
+      }
     };
     this.clearItems = this.clearItems.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleDelete = this.handleDelete.bind(this);
+    this.handleEdit = this.handleEdit.bind(this);
   }
 
   handleChange(evt) {
@@ -69,29 +52,53 @@ class App extends React.Component {
   handleSubmit(evt) {
     evt.preventDefault();
     const {
+      id,
       itemCode,
       itemName,
       itemUnit,
       itemRate,
       itemQty,
-      itemAmount
+      itemAmount,
+      edit,
+      initialInvoiceItems
     } = this.state;
+
     if (itemName !== "" && parseInt(itemQty) > 0) {
-      const tempInvoiceItem = {
-        id: uuid(),
-        itemCode,
-        itemName,
-        itemUnit,
-        itemRate,
-        itemQty,
-        itemAmount
-      };
-      this.setState({
-        initialInvoiceItems: [
-          ...this.state.initialInvoiceItems,
-          tempInvoiceItem
-        ]
-      });
+      if (edit) {
+        let tempInvoiceItem = initialInvoiceItems.map(item =>
+          item.id === id
+            ? {
+                ...item,
+                itemCode,
+                itemName,
+                itemUnit,
+                itemRate,
+                itemQty,
+                itemAmount
+              }
+            : item
+        );
+        this.setState({ initialInvoiceItems: tempInvoiceItem, edit: false });
+        this.handleAlert({ type: "success", text: "Item updated!" });
+      } else {
+        const tempInvoiceItem = {
+          id: uuid(),
+          itemCode,
+          itemName,
+          itemUnit,
+          itemRate,
+          itemQty,
+          itemAmount
+        };
+        this.setState({
+          initialInvoiceItems: [
+            ...this.state.initialInvoiceItems,
+            tempInvoiceItem
+          ]
+        });
+        this.handleAlert({ type: "success", text: "Item added." });
+      }
+
       this.setState({
         itemName: "",
         itemCode: "",
@@ -102,16 +109,59 @@ class App extends React.Component {
       });
       document.querySelector("#itemName").focus();
     } else {
-      console.log(
-        "Error: Item name should not be empty or item quantity should be bigger than zero."
-      );
+      this.handleAlert({
+        type: "danger",
+        text:
+          "Item name should not be empty or item quantity should be bigger than zero."
+      });
     }
+  }
+
+  handleDelete(id) {
+    let tempInvoiceItems = this.state.initialInvoiceItems.filter(
+      item => item.id !== id
+    );
+    this.setState({
+      initialInvoiceItems: tempInvoiceItems
+    });
+
+    this.handleAlert({ type: "success", text: "Item deleted" });
+  }
+
+  handleEdit(id) {
+    let invoiceItem = this.state.initialInvoiceItems.find(
+      item => item.id === id
+    );
+    let { itemName, itemCode, itemUnit, itemQty, itemRate } = invoiceItem;
+    let itemAmount = (parseInt(itemQty) * parseFloat(itemRate)).toFixed(2);
+    this.setState({
+      id,
+      itemName,
+      itemCode,
+      itemUnit,
+      itemQty,
+      itemRate,
+      itemAmount
+    });
+    document.querySelector("#itemName").focus();
+    this.setState({ edit: true });
   }
 
   clearItems() {
     this.setState({
       initialInvoiceItems: []
     });
+    this.handleAlert({ type: "success", text: "Items cleared." });
+  }
+
+  handleAlert({ type, text }) {
+    this.setState({
+      alert: { show: true, type, text }
+    });
+
+    setTimeout(() => {
+      this.setState({ alert: { show: false } });
+    }, 3000);
   }
 
   componentDidMount() {
@@ -123,6 +173,18 @@ class App extends React.Component {
     window.$('[data-toggle="tooltip"]').tooltip("destroy");
     window.$("#itemName").autocomplete("destroy");
   }
+
+  componentDidUpdate(prevProps, prevState) {
+    console.log(prevProps);
+    localStorage.setItem(
+      "invoiceItems",
+      JSON.stringify(prevState.initialInvoiceItems)
+    );
+  }
+
+  // shouldComponentUpdate(nextProps, nextState) {
+  //   return nextState.itemAmount !== "0.00";
+  // }
 
   uiAutocomplete(that) {
     window.$("#itemName").autocomplete({
@@ -166,22 +228,39 @@ class App extends React.Component {
   }
 
   render() {
+    const {
+      itemName,
+      itemCode,
+      itemUnit,
+      itemQty,
+      itemRate,
+      itemAmount,
+      alert,
+      initialInvoiceItems,
+      edit
+    } = this.state;
     return (
       <div className="App">
+        {alert.show && <Alert type={alert.type} text={alert.text} />}
+        <h1 className="text-center h2">React Invoice Tutorial</h1>
         <InvoiceForm
-          itemCode={this.state.itemCode}
-          itemName={this.state.itemName}
-          itemUnit={this.state.itemUnit}
-          itemQty={this.state.itemQty}
-          itemRate={this.state.itemRate}
-          itemAmount={this.state.itemAmount}
+          itemCode={itemCode}
+          itemName={itemName}
+          itemUnit={itemUnit}
+          itemQty={itemQty}
+          itemRate={itemRate}
+          itemAmount={itemAmount}
           handleChange={this.handleChange}
           handleSubmit={this.handleSubmit}
+          edit={edit}
         />
         <InvoiceList
-          invoiceItems={this.state.initialInvoiceItems}
+          invoiceItems={initialInvoiceItems}
           clearItems={this.clearItems}
+          handleDelete={this.handleDelete}
+          handleEdit={this.handleEdit}
         />
+        <InvoiceSummary invoiceItems={initialInvoiceItems} />
       </div>
     );
   }

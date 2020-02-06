@@ -6,3 +6,23 @@
   --mainRed: #d50000;
   --mainGreen: #4caf50;
 }
+
+.App {
+  margin: 1em 0;
+}
+
+body {
+  font-family: "Century Gothic",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    "Noto Sans",
+    sans-serif,
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Segoe UI Symbol",
+    "Noto Color Emoji";
+}
